@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  elasticsearch:
+    # ont utilise l'image officielle d'Elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    container_name: elasticsearch
+    environment:
+      # Configure Elasticsearch en mode noeud unique (utile pour le dev)
+      - discovery.type=single-node
+      # Désactive la sécurité (authentification, SSL pour simplifier l'accès en local
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    networks:
+      - elk
+
+  kibana:
+    # Interface graphique pour explorer les données stockées dans Elasticsearch
+    image: docker.elastic.co/kibana/kibana:7.17.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - elk
+  logstash:
+    # Utilisé pour lire, transformer et envoyer les données vers Elasticsearch
+    image: docker.elastic.co/logstash/logstash:7.17.0
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ../data/f1_telemetry.csv:/usr/share/logstash/f1_telemetry.csv
+    ports:
+      - "5044:5044"
+    depends_on:
+      - elasticsearch
+    networks:
+      - elk
+networks:
+  elk:
+    driver: bridge
