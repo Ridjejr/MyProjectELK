@@ -1,0 +1,22 @@
+pipeline {
+    # le pipeline peut être exécuté sur nimporte quel agent disponible
+    agent any
+
+    stages {
+        # pfremière étape : cloner le dépôt git
+        stage('Cloner le dépôt') {
+            steps {
+                git 'https://github.com/Ridjejr/MyProjectELK.git'
+            }
+        }
+
+        stage('Déployer Stack ELK') {
+            steps {
+                dir('elk') {
+                    sh 'docker-compose pull'
+                    sh 'docker-compose up -d'
+                }
+            }
+        }
+    }
+}
