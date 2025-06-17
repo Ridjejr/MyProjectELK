@@ -1,22 +1,33 @@
 pipeline {
-    # le pipeline peut être exécuté sur nimporte quel agent disponible
-    agent any
+  agent any
 
-    stages {
-        # pfremière étape : cloner le dépôt git
-        stage('Cloner le dépôt') {
-            steps {
-                git 'https://github.com/Ridjejr/MyProjectELK.git'
-            }
-        }
-
-        stage('Déployer Stack ELK') {
-            steps {
-                dir('elk') {
-                    sh 'docker-compose pull'
-                    sh 'docker-compose up -d'
-                }
-            }
-        }
+  stages {
+    stage('Cloner le dépôt') {
+      steps {
+        git 'https://github.com/Ridjejr/MyProjectELK.git'
+      }
     }
+
+    stage('Scraper données F1') {
+      steps {
+        // Installe Python + libs et génère les CSV
+        sh '''
+          cd data
+          python3 -m pip install --upgrade pip
+          pip install requests beautifulsoup4 pandas
+          python f1_scraper_2020_simplified.py
+        '''
+      }
+    }
+
+    stage('Déployer Stack ELK') {
+      steps {
+        dir('elk') {
+          // Met à jour les images (au besoin) puis démarre / redémarre
+          sh 'docker-compose pull'
+          sh 'docker-compose up -d'
+        }
+      }
+    }
+  }
 }
