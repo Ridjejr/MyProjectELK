@@ -1,33 +1,89 @@
+// pipeline {
+//   agent any
+
+//   stages {
+//     stage('Cloner le dépôt') {
+//       steps {
+//         git 'https://github.com/Ridjejr/MyProjectELK.git'
+//       }
+//     }
+
+//     stage('Scraper données F1') {
+//       steps {
+//         // Installe Python + libs et génère les CSV
+//         sh '''
+//           cd data
+//           python3 -m pip install --upgrade pip
+//           pip install requests beautifulsoup4 pandas
+//           python f1_scraper_2020_simplified.py
+//         '''
+//       }
+//     }
+
+//     stage('Déployer Stack ELK') {
+//       steps {
+//         dir('elk') {
+//           // Met à jour les images (au besoin) puis démarre / redémarre
+//           sh 'docker-compose pull'
+//           sh 'docker-compose up -d'
+//         }
+//       }
+//     }
+//   }
+// }
+
+
 pipeline {
-  agent any
+    agent any
 
-  stages {
-    stage('Cloner le dépôt') {
-      steps {
-        git 'https://github.com/Ridjejr/MyProjectELK.git'
-      }
+    environment {
+        PYTHONUNBUFFERED = '1'
     }
 
-    stage('Scraper données F1') {
-      steps {
-        // Installe Python + libs et génère les CSV
-        sh '''
-          cd data
-          python3 -m pip install --upgrade pip
-          pip install requests beautifulsoup4 pandas
-          python f1_scraper_2020_simplified.py
-        '''
-      }
-    }
-
-    stage('Déployer Stack ELK') {
-      steps {
-        dir('elk') {
-          // Met à jour les images (au besoin) puis démarre / redémarre
-          sh 'docker-compose pull'
-          sh 'docker-compose up -d'
+    stages {
+        stage('Cloner le dépôt') {
+            steps {
+                git 'https://github.com/Ridjejr/MyProjectELK.git'
+            }
         }
-      }
+
+        stage('Installer les dépendances Python') {
+            steps {
+                sh '''
+                    python3 -m venv venv
+                    source venv/bin/activate
+                    pip install --upgrade pip
+                    pip install requests
+                '''
+            }
+        }
+
+        stage('Exécuter le script Python') {
+            steps {
+                sh '''
+                    source venv/bin/activate
+                    python data/premier_league_resultat.py
+                '''
+            }
+        }
+
+        stage('Archiver les fichiers CSV') {
+            steps {
+                archiveArtifacts artifacts: '*.csv', fingerprint: true
+            }
+        }
+
+        stage('Déployer la stack ELK') {
+            steps {
+                dir('elk') {
+                    sh '''
+                        docker-compose pull
+                        docker-compose up -d
+                    '''
+                }
+            }
+        }
     }
-  }
 }
+
+

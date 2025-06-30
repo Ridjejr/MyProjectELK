@@ -7,7 +7,7 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     networks:
       - elk
 
@@ -23,16 +23,28 @@ services:
   logstash:
     image: docker.elastic.co/logstash/logstash:7.17.0
     volumes:
-      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./logstash_iot.conf:/usr/share/logstash/pipeline/logstash.conf
       - ../data/premier_league_resultat.csv:/usr/share/logstash/premier_league_resultat.csv
       - ../data/stats_equipes.csv:/usr/share/logstash/stats_equipes.csv
       - ../data/classement.csv:/usr/share/logstash/classement.csv
     ports:
-      - "5044:5044"
+      - "5045:5045"
     depends_on:
       - elasticsearch
     networks:
       - elk
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    networks:
+      - elk
+    depends_on:
+      - kibana
 
 networks:
   elk:

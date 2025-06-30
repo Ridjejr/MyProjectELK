@@ -1,4 +1,4 @@
-name: CI/CD ELK F1
+name: CI/CD ELK Stack
 
 on:
   push:
@@ -7,10 +7,12 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Vérification du fichier docker-compose
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v3
+
+      - name: Vérification du docker-compose
         run: docker-compose -f elk/docker-compose.yml config
 
       - name: Construction des services
